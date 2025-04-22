@@ -1,23 +1,31 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs "23.11.0"
+    }
+
     stages {
-        stage('Checkout Git') {
+        stage('Install Dependencies') {
             steps {
-                git branch: 'master', url: 'https://github.com/sahilsingh12221802/iPhone15Pro-Clone'
+                sh 'npm install'
             }
         }
 
         stage('Build React App') {
             steps {
-                sh './build.sh'
+                sh 'npm run build'  
             }
         }
 
-        stage('Done') {
-            steps {
-                echo "🎉 Building process done Successfully"
-            }
+    }
+
+    post {
+        success {
+            echo 'Pipeline succeeded! 🎉'
+        }
+        failure {
+            echo 'Pipeline failed! ❌'
         }
     }
 }
