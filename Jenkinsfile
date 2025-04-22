@@ -2,24 +2,49 @@ pipeline {
     agent any
 
     stages {
-        stage('Install Dependencies') {
+        stage('Setup Environment') {
             steps {
-                echo "📦 Installing project dependencies"
-                sh 'npm install'
+                sh '''#!/bin/bash
+                # Auto-install Node.js if missing (works on Mac/Linux)
+                if ! command -v node &> /dev/null; then
+                    echo "Installing Node.js..."
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                    sudo apt-get install -y nodejs
+                fi
+                
+                # Verify Docker (must be pre-installed)
+                docker --version || (echo "ERROR: Docker not found. Please install Docker first." && exit 1)
+                '''
             }
         }
 
-        stage('Build Project') {
+        stage('Build React App') {
             steps {
-                echo "🔧 Building the project using Vite"
-                sh 'npm run build'
+                sh '''
+                npm install
+                npm run build
+                '''
             }
         }
 
-        stage('Done') {
+        stage('Deploy with Docker') {
             steps {
-                echo "🎉 Build process completed successfully"
+                sh '''
+                docker build -t iphone-clone .
+                docker stop iphone-clone || true
+                docker rm iphone-clone || true
+                docker run -d -p 3000:80 --name iphone-clone iphone-clone
+                '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 Success! Your app is running at http://localhost:3000"
+        }
+        failure {
+            echo "❌ Failed! Check the logs above for errors"
         }
     }
 }
