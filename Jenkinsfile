@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/sahilsingh12221802/iPhone15Pro-Clone'
+                git branch: 'master', url: 'https://github.com/sahilsingh12221802/iPhone15Pro-Clone'
             }
         }
 
