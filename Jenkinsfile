@@ -1,27 +1,22 @@
 pipeline {
     agent any
-    
+
     stages {
-        stage('Deploy Container') {
+        stage('Checkout Git') {
             steps {
-                sh '''
-                # Stop and remove old container if exists
-                docker stop clever_kilby || true
-                docker rm clever_kilby || true
-                
-                # Run new container
-                docker run -d \
-                   --name clever_kilby \
-                   -p 3000:80 \
-                   iphone-clone-react:latest
-                '''
+                git branch: 'main', url: 'https://github.com/sahilsingh12221802/iPhone15Pro-Clone'
             }
         }
-        
-        stage('Verify') {
+
+        stage('Build React App') {
             steps {
-                echo "🎉 Deployment complete!"
-                echo "Access your app at: http://localhost:3000"
+                sh './build.sh'  
+            }
+        }
+
+        stage('Done') {
+            steps {
+                echo "🎉 Building process done Successfully"
             }
         }
     }
