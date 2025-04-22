@@ -2,40 +2,24 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout Code') {
+        stage('Install Dependencies') {
             steps {
-                echo "🔍 Checking out code from GitHub..."
-                checkout scm
+                echo "📦 Installing project dependencies"
+                sh 'npm install'
             }
         }
 
-        stage('Install & Build') {
+        stage('Build Project') {
             steps {
-                echo "📦 Installing dependencies..."
-                sh 'npm install'
-                
-                echo "🏗️ Building React app..."
+                echo "🔧 Building the project using Vite"
                 sh 'npm run build'
             }
         }
 
-        stage('Deploy') {
+        stage('Done') {
             steps {
-                echo "🚀 Deploying container..."
-                sh '''
-                docker build -t iphone-clone .
-                docker run -d -p 3000:80 iphone-clone
-                '''
+                echo "🎉 Build process completed successfully"
             }
-        }
-    }
-
-    post {
-        success {
-            echo "🎉 Success! App running at http://localhost:3000"
-        }
-        failure {
-            echo "❌ Build failed - check logs above"
         }
     }
 }
