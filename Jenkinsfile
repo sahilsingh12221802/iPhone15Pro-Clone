@@ -1,51 +1,41 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18-alpine'  // Pre-installed Node.js environment
+            args '-v /var/run/docker.sock:/var/run/docker.sock'  // Allows Docker-in-Docker
+        }
+    }
 
     environment {
-        DOCKER_IMAGE = "iphone15pro-clone"  // Your Docker image name
+        DOCKER_IMAGE = "iphone-clone-react"
         DOCKER_TAG = "latest"
+        CONTAINER_PORT = "3000"
+        HOST_PORT = "80"
     }
 
     stages {
-        // Stage 1: Checkout from GitHub
+        // Stage 1: Checkout code from GitHub
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/sahilsingh12221802/iPhone15Pro-Clone.git'
+                checkout scm
             }
         }
 
-        // Stage 2: Install Node.js (if not using Docker agent)
-        stage('Setup Node.js') {
-            steps {
-                script {
-                    // Install Node.js automatically (if not pre-installed)
-                    if (!isUnix()) {
-                        bat 'choco install nodejs -y'  // Windows
-                    } else {
-                        sh '''
-                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                        sudo apt-get install -y nodejs
-                        '''
-                    }
-                }
-            }
-        }
-
-        // Stage 3: Install dependencies
+        // Stage 2: Install dependencies
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
         }
 
-        // Stage 4: Build React app
+        // Stage 3: Build React app
         stage('Build React App') {
             steps {
                 sh 'npm run build'
             }
         }
 
-        // Stage 5: Build Docker image
+        // Stage 4: Build Docker image
         stage('Build Docker Image') {
             steps {
                 script {
@@ -54,27 +44,27 @@ pipeline {
             }
         }
 
-        // Stage 6: Deploy (run container)
+        // Stage 5: Deploy container
         stage('Deploy') {
             steps {
                 script {
-                    // Stop old container if running
-                    sh 'docker stop ${DOCKER_IMAGE} || true'
-                    sh 'docker rm ${DOCKER_IMAGE} || true'
+                    // Stop and remove old container if exists
+                    sh "docker stop ${DOCKER_IMAGE} || true"
+                    sh "docker rm ${DOCKER_IMAGE} || true"
                     // Run new container
-                    sh "docker run -d -p 3000:80 --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    sh "docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
         }
     }
 
-    // Post-build actions (optional)
     post {
         success {
-            echo 'Pipeline succeeded! App deployed.'
+            echo '🚀 Pipeline succeeded! App is running.'
+            echo "Access your app at: http://localhost:${HOST_PORT}"
         }
         failure {
-            echo 'Pipeline failed. Check logs.'
+            echo '❌ Pipeline failed. Check the logs above.'
         }
     }
 }
