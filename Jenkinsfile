@@ -1,50 +1,28 @@
 pipeline {
     agent any
-
+    
     stages {
-        stage('Setup Environment') {
+        stage('Deploy Container') {
             steps {
-                sh '''#!/bin/bash
-                # Auto-install Node.js if missing (works on Mac/Linux)
-                if ! command -v node &> /dev/null; then
-                    echo "Installing Node.js..."
-                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                    sudo apt-get install -y nodejs
-                fi
+                sh '''
+                # Stop and remove old container if exists
+                docker stop clever_kilby || true
+                docker rm clever_kilby || true
                 
-                # Verify Docker (must be pre-installed)
-                docker --version || (echo "ERROR: Docker not found. Please install Docker first." && exit 1)
+                # Run new container
+                docker run -d \
+                   --name clever_kilby \
+                   -p 3000:80 \
+                   iphone-clone-react:latest
                 '''
             }
         }
-
-        stage('Build React App') {
+        
+        stage('Verify') {
             steps {
-                sh '''
-                npm install
-                npm run build
-                '''
+                echo "🎉 Deployment complete!"
+                echo "Access your app at: http://localhost:3000"
             }
-        }
-
-        stage('Deploy with Docker') {
-            steps {
-                sh '''
-                docker build -t iphone-clone .
-                docker stop iphone-clone || true
-                docker rm iphone-clone || true
-                docker run -d -p 3000:80 --name iphone-clone iphone-clone
-                '''
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "🎉 Success! Your app is running at http://localhost:3000"
-        }
-        failure {
-            echo "❌ Failed! Check the logs above for errors"
         }
     }
 }
